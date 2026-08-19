@@ -1,3 +1,10 @@
+"""
+Script de verificación — Recomendador.
+Revisa cuántas órdenes tienen más de un producto distinto, dato clave para
+decidir si es viable collaborative filtering o si conviene content-based
+(fue este último caso: casi ninguna orden tenía múltiples productos).
+"""
+
 from db import engine
 from sqlalchemy import text
 

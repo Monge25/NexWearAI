@@ -1,3 +1,10 @@
+"""
+Script de verificación — Smart Discounts.
+Cuenta usuarios totales vs usuarios con al menos una orden, para confirmar
+que hay suficiente historial real para calcular RFM (recencia, frecuencia,
+valor promedio) antes de entrenar el clasificador de promociones.
+"""
+
 from db import engine
 from sqlalchemy import text
 
