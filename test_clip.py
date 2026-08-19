@@ -1,3 +1,10 @@
+"""
+Script de verificación — CLIP.
+Confirma que el modelo CLIP (ViT-B-32) se descarga y carga correctamente,
+y si hay GPU disponible para acelerar inferencia. Se corre una sola vez
+antes de generar embeddings o servir búsqueda por imagen.
+"""
+
 import open_clip
 import torch
 

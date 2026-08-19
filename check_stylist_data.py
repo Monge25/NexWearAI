@@ -1,3 +1,10 @@
+"""
+Script de verificación — Fashion Stylist.
+Cuenta productos activos por categoría y usuarios con al menos una orden
+pagada, para confirmar que hay suficiente catálogo e historial real antes
+de entrenar el clustering de estilos.
+"""
+
 from db import engine
 from sqlalchemy import text
 
