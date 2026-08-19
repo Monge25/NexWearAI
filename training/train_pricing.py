@@ -2,14 +2,13 @@
 Entrenamiento — Fashion Pricing Intelligence
 ==============================================
 Algoritmo: GradientBoostingRegressor
-Justificación: a diferencia de Random Forest (promedio de árboles independientes),
-Gradient Boosting construye árboles secuenciales que corrigen el error del anterior,
-lo cual captura mejor relaciones de umbral (ej. "si stock < 5 Y demanda alta -> subir
-precio") típicas de una regla de negocio como la que generó el dataset de entrenamiento.
+Justificación: a diferencia de Random Forest, Gradient Boosting construye
+árboles secuenciales que corrigen el error del anterior, lo cual captura
+mejor relaciones de umbral (ej. "si stock < 5 Y demanda alta -> subir
+precio") típicas de la regla de negocio que generó el dataset.
 
-Optimización: GridSearchCV sobre n_estimators, learning_rate y max_depth, con
-validación cruzada de 5 folds, para evitar sobreajuste (learning_rate alto +
-muchos estimadores memoriza el dataset sintético) sin perder precisión.
+Optimización: GridSearchCV sobre n_estimators, learning_rate y max_depth,
+con validación cruzada de 5 folds, para evitar sobreajuste.
 """
 
 import pandas as pd
@@ -18,10 +17,16 @@ from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.metrics import mean_absolute_error
 import joblib
 
-df = pd.read_csv("training/pricing_dataset.csv")
 
-X = df[["stock", "units_sold_30d", "cart_adds", "current_price"]]
-y = df["delta_pct"]
+def load_dataset(path: str) -> pd.DataFrame:
+    """Carga el dataset sintético de pricing generado por generate_pricing_dataset.py."""
+    return pd.read_csv(path)
+
+
+df: pd.DataFrame = load_dataset("training/pricing_dataset.csv")
+
+X: pd.DataFrame = df[["stock", "units_sold_30d", "cart_adds", "current_price"]]
+y: pd.Series = df["delta_pct"]
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
