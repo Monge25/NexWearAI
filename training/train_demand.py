@@ -7,9 +7,7 @@ no lineales entre estacionalidad (semana/mes) y promociones sin necesitar
 escalado de features, y son robustos a outliers en el historial de ventas.
 
 Optimización: se aplica GridSearchCV con validación cruzada (5 folds) sobre
-n_estimators y max_depth para evitar tanto subajuste (árboles muy poco
-profundos) como sobreajuste (demasiados árboles/profundidad memorizando
-el ruido del dataset sintético).
+n_estimators y max_depth para evitar tanto subajuste como sobreajuste.
 """
 
 import pandas as pd
@@ -18,14 +16,19 @@ from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.metrics import mean_absolute_error
 import joblib
 
-df = pd.read_csv("training/demand_dataset.csv")
 
-X = df[["week", "month", "on_sale"]]
-y = df["units_sold"]
+def load_dataset(path: str) -> pd.DataFrame:
+    """Carga el dataset sintético de demanda generado por generate_demand_dataset.py."""
+    return pd.read_csv(path)
+
+
+df: pd.DataFrame = load_dataset("training/demand_dataset.csv")
+
+X: pd.DataFrame = df[["week", "month", "on_sale"]]
+y: pd.Series = df["units_sold"]
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# ── Optimización de hiperparámetros ──
 param_grid = {
     "n_estimators": [50, 100, 200],
     "max_depth": [None, 5, 10],
