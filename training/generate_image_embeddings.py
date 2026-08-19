@@ -1,3 +1,8 @@
+"""
+Genera embeddings CLIP para todos los productos activos con imagen,
+usados por routers/image_search.py para calcular similitud visual.
+"""
+
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -16,19 +21,25 @@ print("Cargando modelo CLIP...")
 model, _, preprocess = open_clip.create_model_and_transforms('ViT-B-32', pretrained='openai')
 model.eval()
 
-# 1. Traer productos con imagen
-with engine.connect() as conn:
-    products = list(conn.execute(text("""
-        SELECT "Id", "Name", "ImageUrl"
-        FROM "Products"
-        WHERE "IsActive" = true AND "ImageUrl" IS NOT NULL AND "ImageUrl" != ''
-    """)))
 
+def fetch_products_with_image(engine) -> list:
+    """Trae de la base los productos activos que sí tienen ImageUrl."""
+    with engine.connect() as conn:
+        return list(conn.execute(text("""
+            SELECT "Id", "Name", "ImageUrl"
+            FROM "Products"
+            WHERE "IsActive" = true AND "ImageUrl" IS NOT NULL AND "ImageUrl" != ''
+        """)))
+
+
+products: list = fetch_products_with_image(engine)
 print(f"Productos con imagen encontrados: {len(products)}")
 
-embeddings = {}
+embeddings: dict = {}
 for row in products:
-    product_id, name, image_url = str(row[0]), row[1], row[2]
+    product_id: str = str(row[0])
+    name: str = row[1]
+    image_url: str = row[2]
     try:
         response = requests.get(image_url, timeout=10)
         img = Image.open(BytesIO(response.content)).convert("RGB")
@@ -36,7 +47,7 @@ for row in products:
 
         with torch.no_grad():
             embedding = model.encode_image(img_input)
-            embedding = embedding / embedding.norm(dim=-1, keepdim=True)  # normalizar
+            embedding = embedding / embedding.norm(dim=-1, keepdim=True)
 
         embeddings[product_id] = {
             "name": name,
@@ -46,7 +57,6 @@ for row in products:
     except Exception as e:
         print(f"  ERROR con {name}: {e}")
 
-# 2. Guardar embeddings en un archivo JSON
 with open("models/product_embeddings.json", "w") as f:
     json.dump(embeddings, f)
 
