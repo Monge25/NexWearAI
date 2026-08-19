@@ -1,3 +1,11 @@
+"""
+Script de análisis retroactivo — Detección de Reseñas Falsas.
+Corre el modelo ya entrenado sobre todas las reseñas existentes en la base
+(que se crearon antes de que el modelo estuviera conectado a
+ReviewsController.Create) y actualiza IsSuspectedFake/FakeReviewConfidence
+para cada una, sin auto-aprobar ni auto-rechazar.
+"""
+
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -8,12 +16,12 @@ from scipy.sparse import hstack
 from db import engine
 from sqlalchemy import text
 
-# Cargar el modelo ya entrenado
 data = joblib.load("models/review_detector_model.pkl")
 model = data["model"]
 vectorizer = data["vectorizer"]
 
-def predict(comment: str, rating: int):
+def predict(comment: str, rating: int) -> tuple:
+    """Devuelve (is_fake, confidence) para un comentario y rating dados."""
     X_text = vectorizer.transform([comment])
     comment_length = len(comment)
     exclamation_count = comment.count("!")
