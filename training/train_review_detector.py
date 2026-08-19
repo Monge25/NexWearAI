@@ -2,14 +2,13 @@
 Entrenamiento — Detección de Reseñas Falsas
 ==============================================
 Algoritmo: RandomForestClassifier sobre features TF-IDF + numéricas
-Justificación: TF-IDF captura patrones léxicos de spam (repetición de palabras,
-frases genéricas) sin necesitar embeddings pesados; Random Forest sobre esas
-features dispersas es rápido de entrenar y menos propenso a sobreajuste que un
-solo árbol, además de dar probabilidades interpretables como "confidence".
+Justificación: TF-IDF captura patrones léxicos de spam sin necesitar
+embeddings pesados; Random Forest sobre esas features dispersas es rápido
+de entrenar y menos propenso a sobreajuste que un solo árbol.
 
 Optimización: GridSearchCV sobre n_estimators y max_depth con validación
-cruzada estratificada, para confirmar que el 100% de accuracy original no era
-producto de un único split afortunado sino un resultado estable.
+cruzada estratificada, para confirmar que el 100% de accuracy original no
+era producto de un único split afortunado sino un resultado estable.
 """
 
 import pandas as pd
@@ -22,6 +21,11 @@ import numpy as np
 import joblib
 
 df = pd.read_csv("training/review_dataset.csv")
+
+# Descarta filas con comentario vacío o solo espacios: TF-IDF no puede
+# vectorizar texto vacío de forma útil y distorsionaría el entrenamiento.
+df = df[df["comment"].fillna("").str.strip() != ""]
+print(f"Reseñas usadas para entrenamiento (tras filtrar vacías): {len(df)}")
 
 tfidf = TfidfVectorizer(max_features=300, min_df=2)
 X_text = tfidf.fit_transform(df["comment"])
