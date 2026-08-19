@@ -1,3 +1,14 @@
+"""
+Endpoint de Detección de Reseñas Falsas.
+
+Clasifica una reseña como sospechosa de spam o confiable, combinando
+TF-IDF sobre el texto del comentario con features numéricas (rating,
+largo del comentario, número de signos de exclamación). Modelo
+RandomForestClassifier entrenado en training/train_review_detector.py.
+No auto-aprueba ni auto-rechaza reseñas: solo asiste la moderación manual
+en el panel de admin.
+"""
+
 from fastapi import APIRouter
 from pydantic import BaseModel
 import joblib
@@ -18,6 +29,7 @@ class ReviewInput(BaseModel):
 
 @router.post("/")
 def detect_fake_review(review: ReviewInput):
+    """Devuelve si una reseña se considera sospechosa de spam y la confianza del modelo."""
     X_text = vectorizer.transform([review.comment])
     comment_length = len(review.comment)
     exclamation_count = review.comment.count("!")
