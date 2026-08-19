@@ -1,0 +1,22 @@
+# Entornos virtuales
+venv/
+.venv/
+env/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Variables de entorno / secretos
+.env
+
+# Modelos entrenados (binarios grandes, se generan con los scripts de training/)
+models/*.pkl
+
+# Datasets generados por ETL (se regeneran con etl/etl_pipeline.py)
+data/*.csv
+
+# Sistema
+.DS_Store
+Thumbs.db
