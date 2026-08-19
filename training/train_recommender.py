@@ -11,13 +11,18 @@ import joblib
 from db import engine
 from sqlalchemy import text
 
-with engine.connect() as conn:
-    df = pd.read_sql(text('''
-        SELECT "Id", "Name", "Category", "Price", "Description"
-        FROM "Products"
-        WHERE "IsActive" = true
-    '''), conn)
 
+def load_active_products(engine) -> pd.DataFrame:
+    """Carga los productos activos desde la base real (columnas usadas para la similitud)."""
+    with engine.connect() as conn:
+        return pd.read_sql(text('''
+            SELECT "Id", "Name", "Category", "Price", "Description"
+            FROM "Products"
+            WHERE "IsActive" = true
+        '''), conn)
+
+
+df: pd.DataFrame = load_active_products(engine)
 print(f"Productos encontrados: {len(df)}")
 
 df["Description"] = df["Description"].fillna("")
@@ -44,7 +49,6 @@ final_similarity = (
     0.15 * price_similarity
 )
 
-# Guardar todo lo necesario para servir recomendaciones después
 joblib.dump({
     "product_ids": df["Id"].astype(str).tolist(),
     "product_names": df["Name"].tolist(),
@@ -55,6 +59,6 @@ print("Modelo de recomendación guardado en models/recommender_model.pkl")
 print("\nEjemplo — productos más parecidos al primero:")
 idx = 0
 sims = final_similarity[idx]
-top_indices = sims.argsort()[::-1][1:4]  # top 3 excluyendo el mismo producto
+top_indices = sims.argsort()[::-1][1:4]
 for i in top_indices:
     print(f"  {df['Name'].iloc[i]} (similitud: {sims[i]:.3f})")
