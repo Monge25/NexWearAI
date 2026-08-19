@@ -1,3 +1,13 @@
+"""
+Endpoint de Recomendador de Productos.
+
+Enfoque content-based: combina similitud de categoría, texto (TF-IDF sobre
+nombre + descripción) y precio entre productos. Se eligió este enfoque en
+vez de collaborative filtering porque la base no tenía suficientes órdenes
+con múltiples productos para ese método. Matriz de similitud precalculada
+en training/train_recommender.py.
+"""
+
 from fastapi import APIRouter, HTTPException
 import joblib
 import os
@@ -13,13 +23,13 @@ similarity_matrix = data["similarity_matrix"]
 
 @router.get("/{product_id}")
 def get_recommendations(product_id: str, top_k: int = 4):
+    """Devuelve los top_k productos más similares al producto dado."""
     if product_id not in product_ids:
         raise HTTPException(status_code=404, detail="Producto no encontrado en el modelo de recomendaciones")
 
     idx = product_ids.index(product_id)
     sims = similarity_matrix[idx]
 
-    # ordenar por similitud descendente, excluyendo el mismo producto
     ranked = sorted(
         [(i, s) for i, s in enumerate(sims) if i != idx],
         key=lambda x: x[1],
