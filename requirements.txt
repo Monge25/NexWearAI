@@ -1,0 +1,14 @@
+fastapi
+uvicorn[standard]
+scikit-learn
+pandas
+numpy
+psycopg2-binary
+sqlalchemy
+joblib
+python-dotenv
+open_clip_torch
+torch
+pillow
+requests
+python-multipart
