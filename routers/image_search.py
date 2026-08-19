@@ -1,3 +1,14 @@
+"""
+Endpoint de Búsqueda de Productos por Imagen.
+
+Recibe una foto y devuelve los productos más parecidos del catálogo.
+Usa CLIP (ViT-B-32) para similitud visual, pero prioriza SIEMPRE el mismo
+tipo de prenda (pantalón, camisa, vestido, etc.) antes que la similitud
+visual pura — el tipo de prenda se infiere con clasificación zero-shot
+(prompt en inglés contra CLIP) y con palabras clave del nombre del producto.
+Embeddings del catálogo precalculados en training/generate_image_embeddings.py.
+"""
+
 from fastapi import APIRouter, UploadFile, File
 import torch
 import open_clip
@@ -36,10 +47,12 @@ with torch.no_grad():
     garment_text_features = garment_text_features / garment_text_features.norm(dim=-1, keepdim=True)
 
 def load_embeddings():
+    """Carga los embeddings CLIP precalculados de todos los productos del catálogo."""
     with open(EMBEDDINGS_PATH, "r") as f:
         return json.load(f)
 
 def infer_garment_type(product_name: str) -> str:
+    """Infiere el tipo de prenda de un producto a partir de palabras clave en su nombre."""
     name_lower = product_name.lower()
     for garment, info in GARMENT_TYPES.items():
         for kw in info["keywords"]:
@@ -49,6 +62,7 @@ def infer_garment_type(product_name: str) -> str:
 
 @router.post("/")
 async def search_by_image(file: UploadFile = File(...), top_k: int = 5):
+    """Recibe una imagen y devuelve los top_k productos más parecidos, priorizando mismo tipo de prenda."""
     embeddings = load_embeddings()
 
     contents = await file.read()
