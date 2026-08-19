@@ -1,3 +1,14 @@
+"""
+Endpoint de Fashion Stylist.
+
+Asigna a cada usuario un "estilo" (Casual/Clasico/Urbano/Elegante) usando
+K-Means sobre categoría + precio de los productos (entrenado en
+training/train_stylist.py), y arma un outfit sugerido (top + bottom +
+accesorio) repartiendo el presupuesto real del usuario (45%/45%/20%).
+El nombre del estilo es solo descriptivo; el outfit se arma con reglas
+de negocio sobre el catálogo real, no directamente del cluster.
+"""
+
 from fastapi import APIRouter
 import joblib
 import pandas as pd
@@ -20,6 +31,7 @@ BOTTOM_KEYWORDS = ["pantalón", "pantalon", "short", "falda", "jean", "palazzo"]
 
 
 def infer_slot(name: str) -> str:
+    """Clasifica un producto como prenda superior, inferior u otro, por palabras clave del nombre."""
     n = name.lower()
     for kw in TOP_KEYWORDS:
         if kw in n:
@@ -31,23 +43,22 @@ def infer_slot(name: str) -> str:
 
 
 def pick_best_within_budget(candidates: pd.DataFrame, slot_budget: float):
+    """Elige el producto más caro que quepa en el presupuesto del slot; si nada cabe, el más barato disponible."""
     if candidates.empty:
         return None
     affordable = candidates[candidates["Price"] <= slot_budget]
     if not affordable.empty:
-        # el más caro que SÍ quepa en el presupuesto de ese slot -> aprovecha el presupuesto
         return affordable.sort_values("Price", ascending=False).iloc[0]
-    # si nada cabe, regresa el más barato disponible de todos modos
     return candidates.sort_values("Price", ascending=True).iloc[0]
 
 
 @router.get("/{user_id}")
 def get_outfit_recommendation(user_id: str, avg_budget: float, preferred_category: str = "mujer"):
+    """Devuelve un outfit (top + bottom + accesorio) ajustado al presupuesto y categoría preferida del usuario."""
     cat = preferred_category.strip().lower()
     if cat not in ("mujer", "hombre"):
         cat = "mujer"
 
-    # 1. Predecir el "estilo" solo como etiqueta descriptiva (usa el modelo ya entrenado)
     cat_col = f"cat_{cat}"
     style_name = "Personalizado"
     if cat_col in category_columns:
@@ -57,7 +68,6 @@ def get_outfit_recommendation(user_id: str, avg_budget: float, preferred_categor
         predicted_cluster = int(mlp_model.predict(features)[0])
         style_name = style_names.get(str(predicted_cluster), style_names.get(predicted_cluster, "Personalizado"))
 
-# 2. Clasificar productos del género elegido por tipo de prenda
     gender_products = products[products["Category"].str.lower() == cat].copy()
     gender_products["slot"] = gender_products["Name"].apply(infer_slot)
 
@@ -65,14 +75,9 @@ def get_outfit_recommendation(user_id: str, avg_budget: float, preferred_categor
     bottoms = gender_products[gender_products["slot"] == "bottom"]
     accessories = products[products["Category"].str.lower() == "accesorios"]
 
-    # 3. Repartir el presupuesto: 45% prenda superior, 45% inferior, 20% accesorio
-# 3. Repartir el presupuesto: 45% prenda superior, 45% inferior, 20% accesorio
-    print(f"\n\n>>> DEBUG VERSION-2 <<< avg_budget={avg_budget}, cat={cat}")
-    print(f">>> tops disponibles: {len(tops)}, bottoms disponibles: {len(bottoms)}")
     top_item = pick_best_within_budget(tops, avg_budget * 0.45)
     bottom_item = pick_best_within_budget(bottoms, avg_budget * 0.45)
     accessory_item = pick_best_within_budget(accessories, avg_budget * 0.20)
-    print(f">>> top elegido: {top_item['Name'] if top_item is not None else None} (${top_item['Price'] if top_item is not None else 0})")
 
     outfit = []
     for item in [top_item, bottom_item, accessory_item]:
